@@ -231,6 +231,13 @@
     </picture>
   </a>
 </div>
+<script>
+  /* פרסומת מסך-מלא — מוצגת רק בכניסה הראשונה למכשיר */
+  try{
+    if(localStorage.getItem('houseAdSeen')) document.getElementById('houseAdOverlay').classList.add('hidden');
+    else localStorage.setItem('houseAdSeen','1');
+  }catch(e){}
+</script>
 
 <!-- ======== הוראות ======== -->
 <div id="howto" class="scr hidden">
