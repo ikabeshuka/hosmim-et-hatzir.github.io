@@ -394,6 +394,7 @@
   <div id="toolbar">
     <button class="tool" id="tPash">📜 פשקווילים<small>תגבורת — 500 נק'</small></button>
     <button class="tool" id="tShofar">🐏 שופר<small>הקפאה — 1000 נק'</small></button>
+    <button class="tool" id="tBag">🛍 שקיות ניילון<small>הגנה ממכת"זית — 2000 נק'</small></button>
     <button class="tool" id="tBochur">🎩 בחור ישיבה<small>זימון — 50 נק'</small></button>
     <button class="tool" id="tAvrech">🧔 אברך ותיק<small>זימון — 150 נק'</small></button>
     <button class="tool" id="tAskan">📱 עסקן<small>זימון — 250 נק'</small></button>
@@ -439,7 +440,7 @@ const G={
   selected:new Set(),
   score:0, escTime:0, gameTime:0, blockTimePeak:0, jamPeak:0,
   wave:0, stage:0, running:false, paused:false,
-  shofarUsed:false, runovers:0, fled:0,
+  shofarUsed:false, bagT:0, runovers:0, fled:0,
   laneDefs:[], roadLen:200, roadHalfW:5, sidewalkZ:7,
   spawnTimers:[], muted:false, totalBlockTime:0,
   newsExtra:[], camMode:'top', followPt:new THREE.Vector3(),
@@ -2667,6 +2668,7 @@ function updateCannon(dt,now){
       if(dist2(p.obj.position.x,p.obj.position.z,c.impact.x,c.impact.z)>6.5) continue;
       if(p.wetCD>0) continue;
       p.wetCD=1;
+      if(G.bagT>0){ if(Math.random()<.12) say(p.obj,pick(['יש שקיות!','לא נרטבים!','מוגנים!']),1.3); continue; }  // שקיות ניילון — חסינות מלאה
       // הדיפה — תמיד הרחק מהמכת"זית (לא לשוכבים/צמודים)
       if(!['lying','attached'].includes(p.state)){
         p.obj.position.x+=(p.obj.position.x>c.obj.position.x?1:-1)*2.2;
@@ -2729,6 +2731,7 @@ const WAVES=[
   {t:240, name:'מכת"זית'}
 ];
 function updateWaves(dt){
+  if(G.bagT>0) G.bagT-=dt;   // טיימר הגנת שקיות הניילון
   if(countStopped()>0||G.peeps.some(p=>p.onRoad())){ G.escTime+=dt; G.protestStarted=true; }
   G.totalBlockTime=G.escTime;
   let w=0;
@@ -2782,6 +2785,13 @@ function toolShofar(){
   if(G.cannon) G.cannon.frozenT=5;
   newsFlash('🔴 קול שופר אדיר נשמע בצומת — השוטרים קפאו במקומם');
   toast('תקיעה גדולה! כוחות הביטחון קפואים 5 שניות!','good');
+}
+function toolBag(){
+  if(G.score<2000||G.bagT>0) return;
+  addScore(-2000); G.bagT=30;
+  AUDIO.ding();
+  newsFlash('🛍 המפגינים לובשים שקיות ניילון — חסינות מהמכת"זית!');
+  toast('שקיות ניילון! המפגינים מוגנים מהמכת"זית ל-30 שניות','good');
 }
 function toolSummon(typeKey){
   const st=UNIT_STATS[typeKey];
@@ -3179,6 +3189,8 @@ function scoreTick(dt){
   // זמינות כפתורים
   $('tPash').disabled=G.score<500||G.peeps.length>=MAXPEEPS;
   $('tShofar').disabled=G.score<1000||G.shofarUsed;
+  $('tBag').disabled=G.score<2000||G.bagT>0;
+  $('tBag').querySelector('small').textContent = G.bagT>0 ? ('מוגן! '+Math.ceil(G.bagT)+' שנ\'') : 'הגנה ממכת"זית — 2000 נק\'';
   $('tBochur').disabled=G.score<50||G.peeps.length>=MAXPEEPS;
   $('tAvrech').disabled=G.score<150||G.peeps.length>=MAXPEEPS;
   $('tAskan').disabled=G.score<250||G.peeps.length>=MAXPEEPS;
@@ -3217,7 +3229,7 @@ function startStage(i){
   setTimeout(()=>{
     G.stage=i;
     buildMap(i);
-    G.escTime=0; G.wave=0; G.gameTime=0; G.shofarUsed=false;
+    G.escTime=0; G.wave=0; G.gameTime=0; G.shofarUsed=false; G.bagT=0;
     G.runovers=0; G.fled=0; G.jamPeak=0; G.bigJamNews=false;
     G.protestStarted=false; G.emptyT=0;
     G.spawnTimers=[]; G.trainTimer=14; G.copCars=[]; G.drivers=[];
@@ -3384,6 +3396,7 @@ function wireUI(){
   };
   $('tPash').onclick=()=>toolPashkevil();
   $('tShofar').onclick=()=>toolShofar();
+  $('tBag').onclick=()=>toolBag();
   $('tBochur').onclick=()=>toolSummon('bochur');
   $('tAvrech').onclick=()=>toolSummon('avrech');
   $('tAskan').onclick=()=>toolSummon('askan');
