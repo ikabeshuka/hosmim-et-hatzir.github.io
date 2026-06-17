@@ -222,7 +222,7 @@
 </div>
 
 <!-- ======== אינטרסטיציאל פרסומת מסך-מלא (זירת האדריכלות) ======== -->
-<div id="houseAdOverlay">
+<div id="houseAdOverlay" class="hidden">
   <button id="houseAdClose" aria-label="סגור פרסומת" onclick="document.getElementById('houseAdOverlay').classList.add('hidden')">✕</button>
   <a href="https://www.ziratadrichalut.co.il/find-designer" target="_blank" rel="noopener sponsored">
     <picture>
@@ -231,13 +231,6 @@
     </picture>
   </a>
 </div>
-<script>
-  /* פרסומת מסך-מלא — מוצגת רק בכניסה הראשונה למכשיר */
-  try{
-    if(localStorage.getItem('houseAdSeen')) document.getElementById('houseAdOverlay').classList.add('hidden');
-    else localStorage.setItem('houseAdSeen','1');
-  }catch(e){}
-</script>
 
 <!-- ======== הוראות ======== -->
 <div id="howto" class="scr hidden">
@@ -552,6 +545,16 @@ const BGM={
     if(!this.el||G.muted) return;
     try{ this.el.currentTime=0; const p=this.el.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){}
   },
+  stop(){ if(this.el){ try{ this.el.pause(); }catch(e){} } }
+};
+
+/* סאונד שלב השוטרים — מתנגן כשמגיע גל המשטרה */
+const COPS={
+  el:null, src:'cops.mp4', primed:false,
+  init(){ if(this.el) return; try{ this.el=new Audio(this.src); this.el.preload='auto'; this.el.volume=.9; }catch(e){} },
+  prime(){ this.init(); if(!this.el||this.primed) return; this.primed=true;   // שחרור אודיו במובייל בתוך מחוות הלחיצה
+    try{ this.el.muted=true; const p=this.el.play(); if(p&&p.then) p.then(()=>{ try{this.el.pause(); this.el.currentTime=0; this.el.muted=false;}catch(e){} }).catch(()=>{ try{this.el.muted=false;}catch(e){} }); }catch(e){} },
+  play(){ this.init(); if(!this.el||G.muted) return; try{ this.el.muted=false; this.el.currentTime=0; const p=this.el.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} },
   stop(){ if(this.el){ try{ this.el.pause(); }catch(e){} } }
 };
 
@@ -2732,7 +2735,7 @@ function updateWaves(dt){
   for(let i=0;i<WAVES.length;i++) if(G.escTime>=WAVES[i].t) w=i+1;
   if(w>G.wave){
     G.wave=w;
-    if(w===2) spawnPolice();
+    if(w===2){ spawnPolice(); COPS.play(); }   // גל השוטרים — מנגן את הסאונד
     if(w===3) spawnHorses();
     if(w===4) spawnCannon();
     if(w===1) newsFlash('🔴 נהגים תקועים מאבדים סבלנות בצומת');
@@ -3241,13 +3244,14 @@ function startStage(i){
     $('hud').style.display='block';
     G.running=true;
     BGM.play();                  // הקלטת רקע בתחילת המשחק
+    COPS.prime();                // משחרר את סאונד השוטרים לניגון מאוחר יותר (מובייל)
     toast('בחרו מפגינים (גרירה) ושלחו אותם לכביש!','good');
   },350);
 }
 function endStage(reason){
   if(!G.running) return;
   G.running=false;
-  AUDIO.siren(false); AUDIO.spray(false); BGM.stop();
+  AUDIO.siren(false); AUDIO.spray(false); BGM.stop(); COPS.stop();
   hideMarker(); hideRect();
   const survivors=G.peeps.length;
   addScore(survivors*100);
@@ -3265,6 +3269,7 @@ function endStage(reason){
   $('btnNext').style.display = (G.stage<2 && reason!=='empty') ? 'block':'none';
   $('hud').style.display='none';
   showScr('summary');        // הסיכום מופיע מיד — בלי השהיה
+  try{ document.getElementById('houseAdOverlay').classList.remove('hidden'); }catch(e){}  // פרסומת מסך-מלא בסיום הפגנה
   showInterstitial();        // פרסומת אינטרסטיציאל מעל (כשזמינה, אחרי אישור גוגל)
 }
 function showInterstitial(){
@@ -3392,7 +3397,7 @@ function wireUI(){
     G.muted=!G.muted;
     $('tMute').textContent=G.muted?'🔇 מושתק':'🔊 צליל';
     AUDIO.setCrowd(0);
-    if(G.muted){ AUDIO.siren(false); AUDIO.spray(false); BGM.stop(); }
+    if(G.muted){ AUDIO.siren(false); AUDIO.spray(false); BGM.stop(); COPS.stop(); }
     else if(G.running){ BGM.play(); }
   };
 }
