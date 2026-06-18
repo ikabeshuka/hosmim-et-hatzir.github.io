@@ -34,7 +34,7 @@ jobs:
       - name: Build Android
         run: |
           export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/26.1.10909125
-          npm run tauri android build -- --no-bundle
+          npm run tauri android build -- -- --no-bundle
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
