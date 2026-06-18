@@ -1,0 +1,22 @@
+{
+  "productName": "Hasima Game",
+  "version": "0.1.0",
+  "identifier": "com.hasima.game",
+  "build": {
+    "frontendDist": "../"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Hasima Game",
+        "width": 800,
+        "height": 600
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all"
+  }
+}
